@@ -43,6 +43,18 @@ sucParserTests = describe "Check successful parsing." $ do
         `shouldBe` Right [ Assignment "AAA" "288AAAC", Assignment "CC234" "111", Exit
                          ]
 
+    it "grep" $
+      parseCommands "  grep \"123\" \"/path/to/my/file\" -A 2"
+        `shouldBe` Right [ Grep False False 2 ["123", "/path/to/my/file"]
+                         ]
+
+    it "assignment/grep" $
+      parseCommands "   AAA=288AAAC | grep -w \"[[:<:]](\\w*work\\w*)[[:>:]]\" \"/path/to/my/file\" -A 22 | echo"
+        `shouldBe` Right [ Assignment "AAA" "288AAAC"
+                         , Grep False True 22 ["[[:<:]](\\w*work\\w*)[[:>:]]", "/path/to/my/file"]
+                         , Echo []
+                         ]
+
 failParserTests :: Spec
 failParserTests = describe "Check unsuccessful parsing." $ do
     it "empty space between two |" $
@@ -53,3 +65,5 @@ failParserTests = describe "Check unsuccessful parsing." $ do
       isLeft (parseCommands "echo \"123\" | cat one echo ") `shouldBe` True
     it "echos with delimiter on end" $
         isLeft (parseCommands "echo|echo|echo |") `shouldBe` True
+    it "grep with negative value of parameter A" $
+        isLeft (parseCommands "grep -A -1 LICENSE") `shouldBe` True
